@@ -11,5 +11,3 @@ lint:
 
 
 precommit: format lint
-
-
