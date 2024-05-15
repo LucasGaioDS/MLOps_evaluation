@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    environment:
+      - LOAD_EX=n
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://username:password@postgres/airflow
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+    depends_on:
+      - postgres
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  fastapi:
+    build: ./api
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "api.api:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      - mlflow  # Si FastAPI interagit avec MLflow
+      - airflow  # Si FastAPI dépend de Airflow pour des raisons opérationnelles
+
+volumes:
+  postgres_data:

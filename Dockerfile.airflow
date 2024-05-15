@@ -1,0 +1,4 @@
+FROM apache/airflow:2.4.1
+USER root
+RUN pip install --no-cache-dir scikit-learn
+USER airflow

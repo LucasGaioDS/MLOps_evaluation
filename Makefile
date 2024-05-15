@@ -1,13 +1,12 @@
 install:
-	pip install --upgrade pip && pip install -r requirements.txt
+	pip install -r requirements.txt
 
-format:
-# format
-	black -l 100 **/*.py
+pylint:
+	pylint --disable=R,C,W dags/*.py
 
-lint:
-# linting
-	pylint --disable=C0301,C0413,C0103 **/*.py
+black:
+	black --line-length 100 dags/*.py
 
+format: black
 
-precommit: format lint
+lint: pylint
