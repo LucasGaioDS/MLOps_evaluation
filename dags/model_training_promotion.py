@@ -1,8 +1,42 @@
+import mlflow
+import mlflow.sklearn
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import pandas as pd
+from sqlalchemy import create_engine
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime, timedelta
-import model_functions as mf
 
+# Définitions des fonctions pour les tâches du DAG
+def train_model():
+    engine = create_engine('postgresql://user:password@localhost:5432/dbname')
+    df = pd.read_sql('SELECT * FROM dpe_training', con=engine)
+    X = df['features']  # Adjust according to your actual feature column
+    y = df['target']    # Adjust according to your actual target column
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    with mlflow.start_run():
+        model = RandomForestClassifier(n_estimators=100, random_state=42)
+        model.fit(X_train, y_train)
+        predictions = model.predict(X_test)
+        accuracy = accuracy_score(y_test, predictions)
+
+        mlflow.log_param("n_estimators", 100)
+        mlflow.log_metric("accuracy", accuracy)
+        mlflow.sklearn.log_model(model, "random_forest_model")
+
+def create_champion_model():
+    # This function would handle logic to check if a champion model exists and create one if not
+    pass
+
+def evaluate_and_promote_model():
+    # This function would evaluate the challenger model and promote it if it outperforms the champion
+    pass
+
+# Configuration du DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
@@ -21,22 +55,22 @@ dag = DAG(
     catchup=False
 )
 
-train_model = PythonOperator(
+train_model_op = PythonOperator(
     task_id='train_model',
-    python_callable=mf.train_model,
+    python_callable=train_model,
     dag=dag
 )
 
-create_champion_model = PythonOperator(
+create_champion_model_op = PythonOperator(
     task_id='create_champion_model',
-    python_callable=mf.create_champion_model,
+    python_callable=create_champion_model,
     dag=dag
 )
 
-evaluate_and_promote_model = PythonOperator(
+evaluate_and_promote_model_op = PythonOperator(
     task_id='evaluate_and_promote_model',
-    python_callable=mf.evaluate_and_promote_model,
+    python_callable=evaluate_and_promote_model,
     dag=dag
 )
 
-train_model >> create_champion_model >> evaluate_and_promote_model
+train_model_op >> create_champion_model_op >> evaluate_and_promote_model_op
