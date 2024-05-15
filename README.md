@@ -4,6 +4,9 @@ A rendre dans un dépôt GitHub, avant le vendredi 3 mai. Travaille en groupe de
 
 Membre : 
 - Lucas GAIO DOS SANTOS.
+- Constant Lucas
+- Barbich Karima
+- Ibrahim Chouay
 
 ## Introduction
 
